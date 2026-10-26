@@ -1,0 +1,32 @@
+[project]
+name = "dependency-aware-mcp"
+version = "0.1.0"
+description = "Milestone 1: versioned MCP shared state with atomic OCC and provenance."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiosqlite>=0.21,<1",
+    "fastapi>=0.115,<1",
+    "mcp[cli]>=2.3,<3",
+    "pydantic>=2.11,<3",
+    "pydantic-settings>=2.9,<3",
+    "python-dotenv>=1.1,<2",
+    "uvicorn[standard]>=0.34,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+    "httpx2>=2.16,<3",
+    "pytest>=8.3,<10",
+    "pytest-asyncio>=1.0,<2",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
