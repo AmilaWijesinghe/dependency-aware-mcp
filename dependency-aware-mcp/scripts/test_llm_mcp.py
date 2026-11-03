@@ -1,12 +1,11 @@
 import asyncio
 
 from deepagents import create_deep_agent
-from langchain.mcp import MCPAdapter
+from uuid import uuid4
 from langchain_ollama import ChatOllama
 
 from app.config import settings
-
-MCP_URL = "http://127.0.0.1:8001/mcp"
+from app.mcp_client.traced_tools import traced_mcp_tools
 
 
 async def main() -> None:
@@ -25,9 +24,11 @@ async def main() -> None:
     # 2. Connect LangChain to MCP
     # -----------------------------------------
 
-    async with MCPAdapter(MCP_URL) as adapter:
-
-        tools = await adapter.list_tools()
+    async with traced_mcp_tools(
+        run_id=f"llm-smoke-{uuid4()}",
+        agent_id="smoke_agent",
+        node_id="update_resource",
+    ) as tools:
 
         print("\nMCP tools available to the agent:")
 

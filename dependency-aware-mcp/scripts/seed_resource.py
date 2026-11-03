@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from app.storage.mongodb import (
     close_database,
+    ensure_indexes,
     ping_database,
     resources,
 )
@@ -10,6 +11,7 @@ from app.storage.mongodb import (
 
 async def main() -> None:
     await ping_database()
+    await ensure_indexes()
 
     print("MongoDB connected successfully.")
 

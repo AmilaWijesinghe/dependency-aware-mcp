@@ -1,65 +1,50 @@
 import logging
-from datetime import datetime, timezone
 
 from mcp.server import MCPServer
-from pymongo import ReturnDocument
+from mcp.server.mcpserver import Context
 
+from app.concurrency.middleware import (
+    ConcurrencyMiddleware,
+)
 from app.storage.mongodb import resources
-
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+    format=("%(asctime)s | " "%(levelname)s | " "%(name)s | " "%(message)s"),
 )
 
-logger = logging.getLogger(__name__)
+
+mcp = MCPServer("Dependency Aware Shared State")
 
 
-mcp = MCPServer(
-    "Dependency Aware Shared State"
-)
+middleware = ConcurrencyMiddleware()
+
+
+# ---------------------------------------------------------
+# READ
+# ---------------------------------------------------------
 
 
 @mcp.tool()
 async def read_shared_resource(
     resource_key: str,
+    ctx: Context,
 ) -> dict:
     """
     Read a shared resource.
 
-    Returns the current value and its version.
-    Always use this before modifying a resource.
+    The resource value and current version are returned.
     """
 
-    resource = await resources.find_one(
-        {
-            "_id": resource_key
-        }
+    return await middleware.read_shared_resource(
+        resource_key=resource_key,
+        ctx=ctx,
     )
 
-    if resource is None:
-        logger.warning(
-            "READ NOT FOUND resource=%s",
-            resource_key,
-        )
 
-        return {
-            "status": "not_found",
-            "resource_key": resource_key,
-        }
-
-    logger.info(
-        "READ resource=%s version=%s",
-        resource_key,
-        resource["version"],
-    )
-
-    return {
-        "status": "ok",
-        "resource_key": resource_key,
-        "value": resource["value"],
-        "version": resource["version"],
-    }
+# ---------------------------------------------------------
+# WRITE
+# ---------------------------------------------------------
 
 
 @mcp.tool()
@@ -67,83 +52,30 @@ async def write_shared_resource(
     resource_key: str,
     new_value: dict,
     expected_version: int,
+    ctx: Context,
 ) -> dict:
     """
-    Update a shared resource.
-
-    The write succeeds only if expected_version matches
-    the current resource version.
+    Update a shared resource only if its current version
+    matches expected_version.
     """
 
-    now = datetime.now(timezone.utc)
-
-    updated = await resources.find_one_and_update(
-        {
-            "_id": resource_key,
-            "version": expected_version,
-        },
-        {
-            "$set": {
-                "value": new_value,
-                "updatedAt": now,
-            },
-            "$inc": {
-                "version": 1,
-            },
-        },
-        return_document=ReturnDocument.AFTER,
+    return await middleware.write_shared_resource(
+        resource_key=resource_key,
+        new_value=new_value,
+        expected_version=(expected_version),
+        ctx=ctx,
     )
 
-    if updated is not None:
-        logger.info(
-            "WRITE resource=%s expected=%s new_version=%s",
-            resource_key,
-            expected_version,
-            updated["version"],
-        )
 
-        return {
-            "status": "ok",
-            "resource_key": resource_key,
-            "previous_version": expected_version,
-            "version": updated["version"],
-            "value": updated["value"],
-        }
-
-    current = await resources.find_one(
-        {
-            "_id": resource_key
-        },
-        {
-            "version": 1
-        },
-    )
-
-    if current is None:
-        return {
-            "status": "not_found",
-            "resource_key": resource_key,
-        }
-
-    logger.warning(
-        "VERSION CONFLICT resource=%s expected=%s actual=%s",
-        resource_key,
-        expected_version,
-        current["version"],
-    )
-
-    return {
-        "status": "conflict",
-        "resource_key": resource_key,
-        "expected_version": expected_version,
-        "current_version": current["version"],
-    }
+# ---------------------------------------------------------
+# LIST
+# ---------------------------------------------------------
 
 
 @mcp.tool()
 async def list_shared_resources() -> list[dict]:
     """
-    List the shared resources available to the agent.
+    List shared resources and their current versions.
     """
 
     cursor = resources.find(
@@ -164,6 +96,70 @@ async def list_shared_resources() -> list[dict]:
         for document in documents
     ]
 
+
+@mcp.tool()
+async def naive_write_shared_resource(
+    resource_key: str,
+    new_value: dict,
+    ctx: Context,
+) -> dict:
+    """
+    Baseline write without optimistic version validation.
+    """
+
+    return await middleware.naive_write_shared_resource(
+        resource_key=resource_key,
+        new_value=new_value,
+        ctx=ctx,
+    )
+
+
+@mcp.tool()
+async def acquire_resource_lock(
+    resource_key: str,
+    ctx: Context,
+    lease_seconds: int = 30,
+) -> dict:
+    """
+    Acquire an application-level exclusive resource lock.
+    """
+
+    return await middleware.acquire_resource_lock(
+        resource_key=resource_key,
+        ctx=ctx,
+        lease_seconds=lease_seconds,
+    )
+
+
+@mcp.tool()
+async def release_resource_lock(
+    resource_key: str,
+    ctx: Context,
+) -> dict:
+
+    return await middleware.release_resource_lock(
+        resource_key=resource_key,
+        ctx=ctx,
+    )
+
+
+@mcp.tool()
+async def locked_write_shared_resource(
+    resource_key: str,
+    new_value: dict,
+    ctx: Context,
+) -> dict:
+
+    return await middleware.locked_write_shared_resource(
+        resource_key=resource_key,
+        new_value=new_value,
+        ctx=ctx,
+    )
+
+
+# ---------------------------------------------------------
+# START SERVER
+# ---------------------------------------------------------
 
 if __name__ == "__main__":
     mcp.run(

@@ -1,0 +1,6 @@
+metric,full_occ,dependency_occ,percent_change_dependency_vs_occ
+mean_wasted_tokens,384.0,40.2,-89.53125
+mean_latency_ms,17293.268929998158,16350.808080002025,-5.449871009414949
+mean_total_tokens,1121.8,1186.2,5.740773756462836
+mean_nodes_reexecuted,2.8,0.3,
+mean_nodes_preserved,2.8,4.7,
