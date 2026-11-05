@@ -1,0 +1,3 @@
+semantic_class,occ_mean_wasted_tokens,dependency_mean_wasted_tokens,wasted_token_reduction_percent,occ_mean_latency_ms,dependency_mean_latency_ms,dependency_latency_change_percent
+non_disruptive,682.92,96.74,85.83435834358343,14159.702105997712,13811.894135999028,-2.4563226499755357
+disruptive,769.12,425.0,44.742042854171,15188.761619998259,16059.31779800274,5.731581018812387

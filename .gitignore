@@ -1,0 +1,61 @@
+# Local credentials (templates are intentionally public)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+
+# JavaScript dependencies, builds, and test artifacts
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+test-results/
+playwright-report/
+
+# Local data, benchmark exports, and caches
+*.log
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+/.npm-cache/
+/.uv-cache/
+/.local-archive/
+/backend/data/*
+!/backend/data/.gitkeep
+/backend/results/
+/backend/benchmark_*.csv
+
+# Reports are generated from the retained Markdown and benchmark snapshots
+/reports/*.pdf
+/reports/*.docx
+/reports/*.html
+/reports/preview_*.png
+/reports/evidence_checks.json
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
